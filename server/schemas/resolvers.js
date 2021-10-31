@@ -8,7 +8,7 @@ const resolvers = {
             return User.find().populate("savedBooks");
         },
         user: async (parent, { username }) => {
-            return User.findOne.({ username }).populate("savedBooks");
+            return User.findOne({ username }).populate("savedBooks");
         },
         me: async (parent, args, context) => {
             if (context.user) {
@@ -46,6 +46,29 @@ const resolvers = {
 
             return { token, user };
         },
-        saveBook:
-    }
-}
+        saveBook: async (parent, { book }, context) => {
+            if (context.user) {
+                const updatedUser = await User.findOneAndUpdate(
+                    { _id: context.user._id },
+                    { $addToSet: { savedBooks: book } },
+                    { new: true, runValidators: true }
+                );
+                return updatedUser;
+            }
+            throw new AuthenticationError("You need to be logged in!");
+        },
+        deleteBook: async (parent, { bookId }, context) => {
+            if (context.user) {
+                const updatedUser = await User.findOneAndUpdate(
+                    { _id: context.user._id },
+                    { $pull: { savedBooks: { bookId: bookId } } },
+                    { new: true }
+                );
+                return updatedUser;
+            }
+            throw new AuthenticationError("You need to be logged in!")
+        },
+    },
+};
+
+module.exports = resolvers;
